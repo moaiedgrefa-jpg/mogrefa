@@ -1,11 +1,29 @@
 name: Build APK
 
-"on":
+on:
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'نوع البناء'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -16,23 +34,47 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Cache Android SDK packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/sdk
+            ~/.android/cache
+          key: android-sdk-${{ runner.os }}-34
+
       - name: Install SDK platform and build tools
         run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.4'
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
 
-      - name: Build debug APK
-        run: gradle assembleDebug --stacktrace --info
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Build APK
+        run: |
+          if [ "${{ inputs.build_type }}" = "release" ]; then
+            ./gradlew assembleRelease --stacktrace
+          else
+            ./gradlew assembleDebug --stacktrace
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: nexus-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: nexus-${{ inputs.build_type || 'debug' }}-apk
+          path: app/build/outputs/apk/**/*.apk
+          retention-days: 14
+          if-no-files-found: error
