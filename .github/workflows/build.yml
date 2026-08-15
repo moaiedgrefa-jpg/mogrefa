@@ -1,6 +1,6 @@
 name: Build APK
 
-on:
+"on":
   workflow_dispatch:
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install SDK platform & build tools
+      - name: Install SDK platform and build tools
         run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
       - name: Set up Gradle
