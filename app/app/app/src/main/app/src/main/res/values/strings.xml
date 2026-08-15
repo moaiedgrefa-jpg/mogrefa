@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">NEXUS</string>
+    <string name="greeting">وش تحب أساعدك فيه؟</string>
+    <string name="mic_permission_rationale">NEXUS يحتاج صلاحية الميكروفون عشان يسمع أوامرك الصوتية. بدونها تقدر تكتب الأوامر بس.</string>
+    <string name="listening">يسمع...</string>
+    <string name="thinking">يفكر...</string>
+    <string name="idle_hint">اضغط الميكروفون أو اكتب أمر مثل \"افتح واتساب\"</string>
+</resources>
