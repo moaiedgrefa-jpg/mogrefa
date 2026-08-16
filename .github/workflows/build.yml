@@ -4,17 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       build_type:
-        description: 'نوع البناء'
+        description: "نوع البناء"
         required: true
-        default: 'debug'
+        default: debug
         type: choice
         options:
           - debug
           - release
+
   push:
-    branches: [ main ]
+    branches:
+      - main
+
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -33,42 +37,27 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
           cache: gradle
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Cache Android SDK packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.android/sdk
-            ~/.android/cache
-          key: android-sdk-${{ runner.os }}-34
-
       - name: Install SDK platform and build tools
-        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+        run: |
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
+          gradle-version: "8.4"
 
       - name: Build APK
         run: |
-          if [ "${{ inputs.build_type }}" = "release" ]; then
-            ./gradlew assembleRelease --stacktrace
+          if [ "${{ inputs.build_type || 'debug' }}" = "release" ]; then
+            gradle assembleRelease --stacktrace --info
           else
-            ./gradlew assembleDebug --stacktrace
+            gradle assembleDebug --stacktrace --info
           fi
 
       - name: Upload APK
